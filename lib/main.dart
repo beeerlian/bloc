@@ -34,7 +34,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: Home());
+    return BlocProvider(
+      create: (context) {
+        return ListPersonBloc();
+      },
+      child: MaterialApp(home: Home()),
+    );
   }
 }
 
@@ -98,24 +103,22 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildHomeWithBlocProvider(BuildContext context) {
-    return BlocProvider(
-        create: (context) => ListPersonBloc(),
-        child: Scaffold(
-          body: BlocBuilder<ListPersonBloc, List<Person>>(
-            builder: (context, listPerson) {
-              print("build list item");
-              return ListView.builder(
-                  itemCount: listPerson.length,
-                  itemBuilder: (context, index) => _buildCardItemBlocProvider(
-                      listPerson[index], context, index));
-            },
-          ),
-          floatingActionButton: FloatingActionButton(
-            child: const Icon(Icons.add),
-            onPressed: () =>
-                context.read<ListPersonBloc>().add(AddPerson("Naufal", true)),
-          ),
-        ));
+    return Scaffold(
+      body: BlocBuilder<ListPersonBloc, List<Person>>(
+        builder: (context, listPerson) {
+          print("build list item");
+          return ListView.builder(
+              itemCount: listPerson.length,
+              itemBuilder: (context, index) => _buildCardItemBlocProvider(
+                  listPerson[index], context, index));
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () =>
+            context.read<ListPersonBloc>().add(AddPerson("Naufal", true)),
+      ),
+    );
   }
 
   Widget _buildEmptyView() {
