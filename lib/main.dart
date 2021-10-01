@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latihan_bloc/bloc/list_person_bloc.dart';
+import 'package:latihan_bloc/bloc/people_bloc.dart';
 import 'package:latihan_bloc/bloc/stream_bloc_nopackage.dart';
 import 'package:latihan_bloc/model/person.dart';
 
@@ -35,17 +38,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
-        return ListPersonBloc();
-      },
-      child: MaterialApp(home: Home()),
-    );
+        create: (_) => PeopleBloc(),
+        child: MaterialApp(
+          home: Home(),
+        ),
+      );
   }
 }
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
   ListPersonStreamBloc streamBloc = ListPersonStreamBloc();
+  PeopleBloc peopleBloc = PeopleBloc();
   @override
   State<Home> createState() => _HomeState();
 }
@@ -59,7 +63,28 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return _buildStreamBlocWithoutPackage(context, widget.streamBloc);
+    List<Person>? people = context.select<PeopleBloc, List<Person>?>(
+        (peopleBloc) {
+          return (peopleBloc.state is PeopleState) ? (peopleBloc.state as PeopleState).people  : null;
+        });
+    return Scaffold(
+      body: people != null
+          ? ListView(
+              children: [
+                for (Person persom in people)
+                  ListTile(
+                    title: Text(persom.name),
+                  )
+              ],
+            )
+          : _buildEmptyView(),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () {
+          context.read<PeopleBloc>().add(AddPersonEvent(Person("ujang", sex: true)));
+        },
+      ),
+    );
   }
 
   Widget _buildStreamBlocWithoutPackage(
@@ -102,23 +127,25 @@ class _HomeState extends State<Home> {
         ));
   }
 
-  Widget _buildHomeWithBlocProvider(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<ListPersonBloc, List<Person>>(
-        builder: (context, listPerson) {
-          print("build list item");
-          return ListView.builder(
-              itemCount: listPerson.length,
-              itemBuilder: (context, index) => _buildCardItemBlocProvider(
-                  listPerson[index], context, index));
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () =>
-            context.read<ListPersonBloc>().add(AddPerson("Naufal", true)),
-      ),
-    );
+  Widget _buildHomeWithBlocPackage(BuildContext context, List<Person>? people) {
+    return BlocBuilder<PeopleBloc, PeopleState>(builder: (_, state) {
+      return Scaffold(
+        body: people != null
+            ? ListView.builder(
+                itemCount: state.people.length,
+                itemBuilder: (context, index) => _buildCardItemBlocProvider(
+                    state.people[index], context, index))
+            : _buildEmptyView(),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.add),
+          onPressed: () {
+            context
+                .read<PeopleBloc>()
+                .add(AddPersonEvent(Person("ujang", sex: true)));
+          },
+        ),
+      );
+    });
   }
 
   Widget _buildEmptyView() {
